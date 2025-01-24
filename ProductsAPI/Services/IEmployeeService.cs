@@ -7,8 +7,12 @@ namespace WebAPI.Services
         Task<List<Employee>> GetAllEmployeesAsync();
         Task<Employee> GetEmployeeByIdAsync(int employeeId);
 
-        Task<Employee> GetEmployeeByNameAsync(string employeeName);
+        Task<bool> GetEmployeeByNameAsync(string employeeName);
         Task AddEmployeeAsync(Employee employee);
+
+        Task<bool> AddEmployeeUsingStoredProcedureAsync(Employee employee);
         Task UpdateEmployeeAsync(Employee employee);
+
+        Task<bool> IsEmployeeNameTakenAsync(string employeeName, int currentEmployeeId);
     }
 }

@@ -55,7 +55,17 @@ namespace WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateEmployee(EmployeeDto employeeDto)
         {
-            
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState); 
+            }
+
+            var employeeExists = await _employeeService.GetEmployeeByNameAsync(employeeDto.Name);
+
+            if(employeeExists)
+            {
+                return BadRequest("Employee already exists");
+            }
 
             var employee = _mapper.Map<Employee>(employeeDto);
 
@@ -64,6 +74,38 @@ namespace WebAPI.Controllers
             return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, employee);
         }
 
+        [HttpPost("CreateEmployeeViaSP")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CreateEmployeeViaSP(EmployeeDto employeeDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var employeeExists = await _employeeService.GetEmployeeByNameAsync(employeeDto.Name);
+
+            if (employeeExists)
+            {
+                return BadRequest("Employee already exists");
+            }
+
+            var employee = _mapper.Map<Employee>(employeeDto);
+
+            // Call the service method to add an employee using a stored procedure
+            var result = await _employeeService.AddEmployeeUsingStoredProcedureAsync(employee);
+
+            if (!result)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while creating the employee.");
+            }
+
+            return CreatedAtAction(nameof(GetEmployee), new { id = employeeDto.Id }, employeeDto);
+        }
+
+        
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -76,7 +118,13 @@ namespace WebAPI.Controllers
                 return NotFound();
             }
 
-           
+            // Check if the new name is already taken by another employee
+            var employeeExists = await _employeeService.IsEmployeeNameTakenAsync(employeeDto.Name, id);
+
+            if (employeeExists)
+            {
+                return BadRequest("Employee name already exists");
+            }
 
             var employee = _mapper.Map<Employee>(employeeDto);
 
